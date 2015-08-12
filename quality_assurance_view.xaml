@@ -29,6 +29,7 @@
             @model: fnx.quality_assurance
             @arch type='xml'
                 %tree $Quality_Assurance
+                    @lot_no
                     @test_date
                     @e_coli
                     @aerobic_plate_count $APC
