@@ -1,0 +1,46 @@
+!!! xml1.0
+%openerp
+    %data
+
+        %menuitem name='Quality Assurance' sequence='30' groups='fnx_qa.group_fnx_quality_assurance_user' #fnx_quality_assurance_main
+
+        %menuitem name='Quality Assurance' sequence='10' parent='fnx_quality_assurance_main' groups='fnx_qa.group_fnx_quality_assurance_user' #fnx_quality_assurance_sub
+
+
+        %record model='ir.ui.view' #fnx_quality_assurance_form_view
+            @name: Quality Assurance Form
+            @model: fnx.quality_assurance
+            @arch type='xml'
+                %form $Quality_Assurance version='7.0'
+                    %group
+                        %group colspan='2'
+                            @product_id
+                            @lot_no
+                            @test_date
+                    %group colspan='2'
+                        @e_coli
+                        @aerobic_plate_count
+                        @yeast_mold
+                        @salmonella
+                        @listeria
+
+        %record model='ir.ui.view' #fnx_quality_assurance_tree_view
+            @name: Quality Assurance List
+            @model: fnx.quality_assurance
+            @arch type='xml'
+                %tree $Quality_Assurance
+                    @test_date
+                    @e_coli
+                    @aerobic_plate_count $APC
+                    @yeast_mold string='Yeast & Mold'
+                    @salmonella
+                    @listeria
+
+        %record model='ir.actions.act_window' #fnx_quality_assurance_history_action
+            @name: Tests
+            @type: ir.actions.act_window
+            @res_model: fnx.quality_assurance
+            @view_type: form
+            @view_mode: tree,form
+
+        %menuitem name='Tests' sequence='10' parent='fnx_quality_assurance_sub' groups='fnx_qa.group_fnx_quality_assurance_user' action='fnx_quality_assurance_history_action' #fnx_quality_assurance_history
