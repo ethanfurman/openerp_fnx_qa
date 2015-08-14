@@ -1,0 +1,16 @@
+@charset "utf-8";
+.fnx_qa table {
+}
+.fnx_qa table th {
+  text-align: center !important;
+}
+.fnx_qa table td {
+  padding: 5px;
+  margin: 5px;
+}
+.fnx_qa select {
+  max-width: 225px;
+}
+.fnx_qa .down {
+  padding-top: 10px;
+}

@@ -17,12 +17,46 @@
                             @product_id
                             @lot_no
                             @test_date
-                    %group colspan='2'
-                        @e_coli
-                        @aerobic_plate_count
-                        @yeast_mold
-                        @salmonella
-                        @listeria
+                    %separator $Standand_Tests
+                    %div $Standard_Tests .fnx_qa
+                        %table
+                            %tr
+                                %th : Dilution
+                                %th : Coliform
+                                %th : E.coli
+                                %th : APC
+                                %th : YM
+                            %tr
+                                %td .down : 1/10
+                                %td
+                                    @coliform_10 placeholder='Not Applicable'
+                                %td
+                                    @e_coli_10 placeholder='Not Applicable'
+                                %td
+                                    @aerobic_plate_count_10 placeholder='Not Applicable'
+                                %td
+                                    @yeast_mold_10 placeholder='Not Applicable'
+                            %tr
+                                %td .down : 1/100
+                                %td
+                                    @coliform_100 placeholder='Not Applicable'
+                                %td
+                                    @e_coli_100 placeholder='Not Applicable'
+                                %td
+                                    @aerobic_plate_count_100 placeholder='Not Applicable'
+                                %td
+                                    @yeast_mold_100 placeholder='Not Applicable'
+                            %tr
+                                %td .down : 1/1000
+                                %td
+                                %td
+                                %td
+                                    @aerobic_plate_count_100 placeholder='Not Applicable'
+                                %td
+                                    @yeast_mold_100 placeholder='Not Applicable'
+                        %group
+                            @salmonella placeholder='Not Applicable'
+                    %separator $Extra_Tests
 
         %record model='ir.ui.view' #fnx_quality_assurance_tree_view
             @name: Quality Assurance List
@@ -31,11 +65,7 @@
                 %tree $Quality_Assurance
                     @lot_no
                     @test_date
-                    @e_coli
-                    @aerobic_plate_count $APC
-                    @yeast_mold string='Yeast & Mold'
-                    @salmonella
-                    @listeria
+                    @result
 
         %record model='ir.actions.act_window' #fnx_quality_assurance_history_action
             @name: Tests
