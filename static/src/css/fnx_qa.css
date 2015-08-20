@@ -3,6 +3,13 @@
 }
 .fnx_qa table th {
   text-align: center !important;
+  min-width: 125px;
+  max-width: 22%;
+}
+.fnx_qa table th:first-child {
+  text-align: left !important;
+  min-width: 50;
+  max-width: 12%;
 }
 .fnx_qa table td {
   padding: 5px;
@@ -10,6 +17,12 @@
 }
 .fnx_qa select {
   max-width: 225px;
+}
+.fnx_qa_one_four {
+  max-width: 225px;
+}
+.fnx_qa_two_four {
+  max-width: 450px;
 }
 .fnx_qa .down {
   padding-top: 10px;
