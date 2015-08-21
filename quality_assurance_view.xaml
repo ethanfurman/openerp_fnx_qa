@@ -6,28 +6,26 @@
 
         %menuitem name='Quality Assurance' sequence='10' parent='fnx_quality_assurance_main' groups='fnx_qa.group_fnx_quality_assurance_user' #fnx_quality_assurance_sub
 
-
         %record model='ir.ui.view' #fnx_quality_assurance_form_view
-            @name: Quality Assurance Form
+            @name: fnx.quality_assurance.form
             @model: fnx.quality_assurance
             @arch type='xml'
-                %form $Quality_Assurance version='7.0'
-                    %group
-                        %group colspan='2'
-                            @product_id
-                            @lot_no
-                            @test_date
-                    %separator $Standand_Tests
-                    %div $Standard_Tests .fnx_qa
+                %form $Quality_Assurance version='7.0' .fnx_qa
+                        %group
+                            @product_id .fnx_qa_two_four
+                            @lot_no .fnx_qa_one_four
+                            @test_datetime
+                    %hr
+                    %div @standard_tests
                         %table
                             %tr
                                 %th : Dilution
                                 %th : Coliform
                                 %th : E.coli
-                                %th : APC
-                                %th : YM
+                                %th : Aerobic Plate Count
+                                %th : Yeast and Mold
                             %tr
-                                %td .down : 1/10
+                                %th : 1/10
                                 %td
                                     @coliform_10 placeholder='Not Applicable'
                                 %td
@@ -37,7 +35,7 @@
                                 %td
                                     @yeast_mold_10 placeholder='Not Applicable'
                             %tr
-                                %td .down : 1/100
+                                %th : 1/100
                                 %td
                                     @coliform_100 placeholder='Not Applicable'
                                 %td
@@ -47,31 +45,80 @@
                                 %td
                                     @yeast_mold_100 placeholder='Not Applicable'
                             %tr
-                                %td .down : 1/1000
+                                %th : 1/1000
                                 %td
                                 %td
                                 %td
-                                    @aerobic_plate_count_100 placeholder='Not Applicable'
+                                    @aerobic_plate_count_1000 placeholder='Not Applicable'
                                 %td
-                                    @yeast_mold_100 placeholder='Not Applicable'
-                        %group
-                            @salmonella placeholder='Not Applicable'
-                    %separator $Extra_Tests
+                                    @yeast_mold_1000 placeholder='Not Applicable'
+                    %hr
+                    %group
+                        @salmonella placeholder='Not Applicable'
+                    %div @extra_tests
+                    %hr
+                    %separator string='Results / Remarks'
+                    %div @results
+                        @result
+
+    %data noupdate='1'
+        
+        %record model='ir.ui.view' #fnx_quality_assurance_dynamic_form_view
+            @name: fnx.quality_assurance.form.dynamic
+            @model: fnx.quality_assurance
+            @inherit_id ref='fnx_quality_assurance_form_view'
+            @arch type='xml'
+                %div @extra_tests position='inside'
+                    temp text
+
+    %data
 
         %record model='ir.ui.view' #fnx_quality_assurance_tree_view
-            @name: Quality Assurance List
+            @name: fnx.quality_assurance.tree
             @model: fnx.quality_assurance
             @arch type='xml'
                 %tree $Quality_Assurance
                     @lot_no
-                    @test_date
+                    @test_datetime
                     @result
 
         %record model='ir.actions.act_window' #fnx_quality_assurance_history_action
-            @name: Tests
+            @name: Records
             @type: ir.actions.act_window
             @res_model: fnx.quality_assurance
             @view_type: form
             @view_mode: tree,form
 
-        %menuitem name='Tests' sequence='10' parent='fnx_quality_assurance_sub' groups='fnx_qa.group_fnx_quality_assurance_user' action='fnx_quality_assurance_history_action' #fnx_quality_assurance_history
+        %menuitem name='Records' sequence='10' parent='fnx_quality_assurance_sub' groups='fnx_qa.group_fnx_quality_assurance_user' action='fnx_quality_assurance_history_action' #fnx_quality_assurance_history
+
+        %record model='ir.ui.view' #fnx_quality_assurance_test_tree_view
+            @name: Extra Test
+            @model: fnx.quality_assurance.extra_test
+            @arch type='xml'
+                %tree $Test_Types
+                    @name
+                    @type
+
+        %record model='ir.ui.view' #fnx_quality_assurance_test_form_view
+            @name: Extra Test
+            @model: fnx.quality_assurance.extra_test
+            @arch type='xml'
+                %form $Test_Types version='7.0' .fnx_qa
+                    %group
+                        %group
+                            @name .fnx_qa_one_four
+                            @type
+                    %group
+                        %div
+                            %label for='notes' string='Notes about test'
+                            @notes
+
+
+        %record model='ir.actions.act_window' #fnx_quality_assurance_test_action
+            @name: Extra Test
+            @type: ir.actions.act_window
+            @res_model: fnx.quality_assurance.extra_test
+            @view_type: form
+            @view_mode: tree,form
+
+        %menuitem name='Test Types' sequence='20' parent='fnx_quality_assurance_sub' groups='fnx_qa.group_fnx_quality_assurance_user' action='fnx_quality_assurance_test_action' #fnx_quality_assurance_test
