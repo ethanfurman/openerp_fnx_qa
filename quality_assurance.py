@@ -3,6 +3,7 @@ import string
 import openerp
 from collections import defaultdict
 from fnx import translator, grouped
+from openerp import SUPERUSER_ID
 from osv.osv import except_osv as ERPError
 from osv import fields, osv, orm
 from psycopg2 import ProgrammingError
@@ -158,10 +159,10 @@ class extra_test(osv.Model):
         }
 
 
-    def _generate_form(self, cr, uid, context=None):
+    def _generate_form(self, cr, context=None):
         view = self.pool.get('ir.ui.view')
-        dynamic_form = view.browse(cr, uid, [('name','=','fnx.quality_assurance.form.dynamic')], context=context)[0]
-        extra_tests = self.read(cr, uid, fields=['name', 'field_name', 'type', 'notes'], context=context)
+        dynamic_form = view.browse(cr, SUPERUSER_ID, [('name','=','fnx.quality_assurance.form.dynamic')], context=context)[0]
+        extra_tests = self.read(cr, SUPERUSER_ID, fields=['name', 'field_name', 'type', 'notes'], context=context)
         # sort the tests between dilution and pass-fail
         dilution_tests = []
         pass_fail_tests = []
@@ -176,7 +177,7 @@ class extra_test(osv.Model):
             dilution_level[test['name']][test['type']] = (True, test['field_name'])
         doc = Xaml(dynamic_tests, grouped=grouped).document
         arch = doc.string(pass_fail_tests=pass_fail_tests, dilution_level=dilution_level, grouped=grouped)
-        view.write(cr, uid, [dynamic_form.id], {'arch':arch}, context=context)
+        view.write(cr, SUPERUSER_ID, [dynamic_form.id], {'arch':arch}, context=context)
 
     def create(self, cr, uid, values, context=None):
         # calculate 'field_name' and create
@@ -203,7 +204,7 @@ class extra_test(osv.Model):
         qa._add_extra_test(cr, [extra_field,])
         try:
             # update the fnx.quality_assurance.device.form.dynamic view to include the new field
-            self._generate_form(cr, uid, context=context)
+            self._generate_form(cr, context=context)
         except Exception, e:
             qa._remove_extra_test(cr, [extra_field,])
             raise #ERPError('Uh Oh!', str(e))
@@ -215,7 +216,7 @@ class extra_test(osv.Model):
         result = super(extra_test, self).write(cr, uid, ids, values, context=context)
         # uncomment next two lines if we ever allow changes to 'name' or 'type'
         # if result:
-        #     self._generate_form(cr, uid, context=context)
+        #     self._generate_form(cr, context=context)
         return result
 
     def unlink(self, cr, uid, ids, context=None):
@@ -233,7 +234,7 @@ class extra_test(osv.Model):
                     }
             qa._remove_extra_test(cr, [extra_field,])
         result = super(extra_test, self).unlink(cr, uid, ids, context=context)
-        self._generate_form(cr, uid, context=context)
+        self._generate_form(cr, context=context)
         return result
 
 dynamic_tests = '''\
