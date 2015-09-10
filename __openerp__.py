@@ -11,6 +11,7 @@
     'depends': [
         'base',
         'fnx',
+        'fis_integration',
         'product',
         ],
     'js': [
