@@ -61,7 +61,6 @@ class quality_assurance(osv.Model):
             finally:
                 qa_cr.close()
         for extra_field in extra_fields:
-            print 'creating field', extra_field
             name = extra_field['name']
             field_name = extra_field['field_name']
             type = extra_field['field_type']
@@ -206,19 +205,17 @@ class extra_test(osv.Model):
 
     def __init__(self, pool, cr):
         'read extra_test table and add found records to this table'
-        print 'extra_test.__init__'
         res = super(extra_test, self).__init__(pool, cr)
         cr.execute("SELECT name from ir_model where model='fnx.quality_assurance.extra_test'")
         if cr.fetchone() is not None:
-            print '  generating form'
-            self._generate_form(cr, SUPERUSER_ID)
+            self._generate_form(cr)
         return res
 
-    def _generate_form(self, cr, uid, context=None):
+    def _generate_form(self, cr, context=None):
         view = self.pool.get('ir.ui.view')
-        dynamic_form = view.browse(cr, uid, [('name','=','fnx.quality_assurance.form.dynamic')], context=context)[0]
+        dynamic_form = view.browse(cr, SUPERUSER_ID, [('name','=','fnx.quality_assurance.form.dynamic')], context=context)[0]
         extra_tests = self.read(
-                cr, uid,
+                cr, SUPERUSER_ID,
                 fields=['name', 'field_name', 'field_type', 'dilution_10', 'dilution_100', 'dilution_1000', 'notes'],
                 context=context)
         # sort the tests between count, dilution, and pass-fail
@@ -242,7 +239,7 @@ class extra_test(osv.Model):
                     dilution_level[test['name']][possible_dilution] = (True, test['field_name']+postfix)
         doc = Xaml(dynamic_tests, grouped=grouped).document
         arch = doc.string(pass_fail_tests=pass_fail_tests, dilution_level=dilution_level, count_tests=count_tests)
-        view.write(cr, uid, [dynamic_form.id], {'arch':arch}, context=context)
+        view.write(cr, SUPERUSER_ID, [dynamic_form.id], {'arch':arch}, context=context)
 
     def create(self, cr, uid, values, context=None):
         # calculate 'field_name' and create
@@ -288,7 +285,7 @@ class extra_test(osv.Model):
         qa._add_extra_test(cr, extra_fields)
         try:
             # update the fnx.quality_assurance.device.form.dynamic view to include the new field
-            self._generate_form(cr, uid, context=context)
+            self._generate_form(cr, context=context)
         except Exception, e:
             qa._remove_extra_test(cr, extra_fields)
             raise ERPError('Uh Oh!', str(e))
@@ -300,7 +297,7 @@ class extra_test(osv.Model):
         result = super(extra_test, self).write(cr, uid, ids, values, context=context)
         # uncomment next two lines if we ever allow changes to 'name' or 'field_type'
         # if result:
-        #     self._generate_form(cr, uid, context=context)
+        #     self._generate_form(cr, context=context)
         return result
 
     def unlink(self, cr, uid, ids, context=None):
@@ -330,7 +327,7 @@ class extra_test(osv.Model):
                         })
             qa._remove_extra_test(cr, extra_fields)
         result = super(extra_test, self).unlink(cr, uid, ids, context=context)
-        self._generate_form(cr, uid, context=context)
+        self._generate_form(cr, context=context)
         return result
 
 dynamic_tests = '''\
