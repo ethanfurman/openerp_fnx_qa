@@ -1,20 +1,20 @@
 !!! xml1.0
 
-%openerp
-    %data noupdate='1'
+~openerp
+    ~data noupdate='1'
 
-        %record model='ir.module.category' #module_category_fnx_quality_assurance
+        ~record model='ir.module.category' #module_category_fnx_quality_assurance
             @name: Quality Assurance
             @sequence: 30
             @description: Testing records for food safety
 
-        %record model='res.groups' #group_fnx_quality_assurance_user
+        ~record model='res.groups' #group_fnx_quality_assurance_user
             @name: User
             @category_id ref='module_category_fnx_quality_assurance'
             @comment: User can create records
             @users eval="[(4, ref('base.user_root'))]"
 
-        %record model='res.groups' #group_fnx_quality_assurance_manager
+        ~record model='res.groups' #group_fnx_quality_assurance_manager
             @name: Manager
             @category_id ref='module_category_fnx_quality_assurance'
             @comment: Manager can modify records
