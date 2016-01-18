@@ -332,43 +332,43 @@ class extra_test(osv.Model):
 
 dynamic_tests = '''\
 !!! xml1.0
-%data
+~data
     -if args.pass_fail_tests:
-        %div @extra_tests position='inside'
-            %group
+        ~div @extra_tests position='inside'
+            ~group
                 -for test in args.pass_fail_tests:
-                    %field name=`test['field_name']` placeholder="Not Applicable" .fnx_qa_one_four
+                    ~field name=`test['field_name']` placeholder="Not Applicable" .fnx_qa_one_four
     -if args.count_tests:
-        %div @extra_tests position='inside'
-            %group
+        ~div @extra_tests position='inside'
+            ~group
                 -for test in args.count_tests:
                     -field_name = test['field_name']
-                    %field name=field_name placeholder="Not Applicable" .fnx_qa_one_four
-    %hr
+                    ~field name=field_name placeholder="Not Applicable" .fnx_qa_one_four
+    ~hr
     -if args.dilution_level:
-        %div @extra_tests position='inside'
-            %div .fnx_qa
+        ~div @extra_tests position='inside'
+            ~div .fnx_qa
                 -for next_four in grouped(sorted(args.dilution_level.items()), 4):
-                    %table
-                        %tr
-                            %th : dilution
+                    ~table
+                        ~tr
+                            ~th : dilution
                             -for i, (name, tests) in enumerate(next_four):
-                                %th : =name
+                                ~th : =name
                             -for j in range(i+1, 4):
-                                %th
+                                ~th
                         -for level,label in (('tenth', '1/10'), ('hundreth', '1/100'), ('thousandth', '1/1000')):
                             -if any(test[1][level][0] for test in next_four):
-                                %tr
-                                    %th : =label
+                                ~tr
+                                    ~th : =label
                                     -for test_name, tests in next_four:
-                                        %td
+                                        ~td
                                             -active, field_name = tests[level]
                                             -if active:
                                                 -onchange = "onchange_dilution('%s', %s)" % (field_name, field_name)
-                                                %field name=field_name placeholder='Not Applicable' on_change=onchange
+                                                ~field name=field_name placeholder='Not Applicable' on_change=onchange
                                             -else:
-                                                %separator
-                    %hr
+                                                ~separator
+                    ~hr
 '''
 
 _fix_field_name = translator(to='_', keep=string.lowercase+'-', compress=True)
