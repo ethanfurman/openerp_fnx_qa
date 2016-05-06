@@ -83,12 +83,30 @@
                     @test_date
                     @result
 
+        ~record model='ir.ui.view' #fnx_quality_assurance_search
+            @name: fnx.quality_assurance.search
+            @model: fnx.quality_assurance
+            @arch type='xml'
+                ~search $Search_Records
+                    @product_id
+                    @name
+                    @test_date
+                    ~separator
+                    ~filter $Recent @type_five_month domain="[('test_date','>=','Month5')]" help="Last five months of records"
+                    ~filter $Archived @type_archived domain="[('test_date','<','Month5')]"
+                    ~separator
+                    ~group expand="0" string='Group By...'
+                        ~filter $Product domain='[]' context="{'group_by' : 'product_id'}"
+                        ~filter $Lot_Number domain='[]' context="{'group_by': 'lot_no'}"
+                        ~filter $Test_Date domain='[]' context="{'group_by': 'test_date'}"
+
         ~record model='ir.actions.act_window' #fnx_quality_assurance_history_action
             @name: Records
             @type: ir.actions.act_window
             @res_model: fnx.quality_assurance
             @view_type: form
             @view_mode: tree,form
+            @context: {'search_default_type_five_month':1}
 
         ~menuitem name='Records' sequence='10' parent='fnx_quality_assurance_sub' groups='fnx_qa.group_fnx_quality_assurance_user' action='fnx_quality_assurance_history_action' #fnx_quality_assurance_history
 
