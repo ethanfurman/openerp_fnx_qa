@@ -5,7 +5,7 @@ from collections import defaultdict
 from fnx import translator, grouped
 from openerp import SUPERUSER_ID
 from osv.osv import except_osv as ERPError
-from osv import fields, osv, orm
+from osv import fields, osv
 from psycopg2 import ProgrammingError
 from xaml import Xaml
 
@@ -38,7 +38,7 @@ class quality_assurance(osv.Model):
             qa_cr = db.cursor()
             try:
                 qa_cr.execute('SELECT name,field_name,field_type,dilution_10,dilution_100,dilution_1000,notes FROM fnx_quality_assurance_extra_test')
-            except ProgrammingError, e:
+            except ProgrammingError:
                 # if 'does not exist' in str(e):
                 #     return
                 raise
@@ -237,7 +237,7 @@ class extra_test(osv.Model):
                     ):
                 if test[dilution_field]:
                     dilution_level[test['name']][possible_dilution] = (True, test['field_name']+postfix)
-        doc = Xaml(dynamic_tests, grouped=grouped).document
+        doc = Xaml(dynamic_tests, grouped=grouped).document.pages[0]
         arch = doc.string(pass_fail_tests=pass_fail_tests, dilution_level=dilution_level, count_tests=count_tests)
         view.write(cr, SUPERUSER_ID, [dynamic_form.id], {'arch':arch}, context=context)
 
@@ -315,7 +315,7 @@ class extra_test(osv.Model):
             else:
                 raise ERPError('Logic Error', 'unknown field type: "%s"' % record.field_type)
             for field_name in names_to_remove:
-                if qa.search(cr, uid, [(field_name, '!=', False)], count=True):
+                if qa.search(cr, uid, [(field_name, '!=', False)], count=True, context=context):
                     raise ERPError('Field has data', 'Unable to remove field "%s" as some tests have data for that field' % record.name)
             extra_fields = []
             for field_name in names_to_remove:
