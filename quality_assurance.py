@@ -2,7 +2,7 @@ import threading
 import string
 import openerp
 from collections import defaultdict
-from fnx import translator, grouped
+from VSS.utils import translator, grouped
 from openerp import SUPERUSER_ID
 from osv.osv import except_osv as ERPError
 from osv import fields, osv
