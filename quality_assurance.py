@@ -4,7 +4,7 @@ import openerp
 from collections import defaultdict
 from VSS.utils import translator, grouped
 from openerp import SUPERUSER_ID
-from osv.osv import except_osv as ERPError
+from openerp.exceptions import ERPError
 from osv import fields, osv
 from psycopg2 import ProgrammingError
 from xaml import Xaml
