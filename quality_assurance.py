@@ -292,7 +292,7 @@ class extra_test(osv.Model):
         return new_id
 
     def write(self, cr, uid, ids, values, context=None):
-        if values and len(values.keys()) > 2 or 'notes' not in values:
+        if values and values.keys() != ['notes']:
             raise ERPError('Error', 'Only "notes" can be changed at this point.')
         result = super(extra_test, self).write(cr, uid, ids, values, context=context)
         # uncomment next two lines if we ever allow changes to 'name' or 'field_type'
