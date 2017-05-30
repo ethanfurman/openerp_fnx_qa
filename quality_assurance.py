@@ -243,7 +243,7 @@ class extra_test(osv.Model):
 
     def create(self, cr, uid, values, context=None):
         # calculate 'field_name' and create
-        name = fix_field_name(values['name'].lower())
+        name = fix_field_name(values['name'])
         field_type = values['field_type']
         tenth = values.get('dilution_10')
         hundreth = values.get('dilution_100')
@@ -251,13 +251,7 @@ class extra_test(osv.Model):
         if field_type == 'dilution' and not (tenth or hundreth or thousandth):
             raise ERPError('missing dilution level', '1/10, 1/100, and/or 1/1000 must be selected for the dilution levels')
         if field_type != 'dilution' and (tenth or hundreth or thousandth):
-            print "eek!  dilution levels present!! exterminating!!!"
-            if tenth:
-                del values['dilution_10']
-            if hundreth:
-                del values['dilution_100']
-            if thousandth:
-                del values['dilution_1000']
+            raise ERPError('invalid dilution level', '1/10, 1/100, and/or 1/1000 cannot be selected for fields of type %r' % field_type)
         if field_type in ('pass_fail', 'count'):
             new_fields = [(name, field_type)]
         elif field_type == 'dilution':
@@ -371,6 +365,7 @@ dynamic_tests = '''\
                     ~hr
 '''
 
-_fix_field_name = translator(to='_', keep=string.lowercase+'-', compress=True)
+_fix_field_name = translator(to='_', keep=string.lowercase+'-0123456789', compress=True)
 def fix_field_name(name):
+    name = name.replace('<', '_lt_')
     return _fix_field_name(name.lower())
