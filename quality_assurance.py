@@ -188,6 +188,7 @@ class quality_assurance(osv.Model):
 class extra_test(osv.Model):
     _name = 'fnx.quality_assurance.extra_test'
     _description = 'additional test type'
+    _order = 'name'
 
     _columns = {
         'name': fields.char('Test', size=32, required=True),
