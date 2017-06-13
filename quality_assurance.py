@@ -204,9 +204,9 @@ class extra_test(osv.Model):
         'notes': fields.text(string='Notes about test'),
         }
 
-    def __init__(self, pool, cr):
+    def _post_init(self, pool, cr):
         'read extra_test table and add found records to this table'
-        res = super(extra_test, self).__init__(pool, cr)
+        res = super(extra_test, self)._post_init(pool, cr)
         cr.execute("SELECT name from ir_model where model='fnx.quality_assurance.extra_test'")
         if cr.fetchone() is not None:
             self._generate_form(cr)
