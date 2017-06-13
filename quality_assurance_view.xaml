@@ -11,10 +11,10 @@
             @model: fnx.quality_assurance
             @arch type='xml'
                 ~form $Quality_Assurance version='7.0'
-                        ~group
-                            @product_id .fnx_qa_two_four
-                            @lot_no .fnx_qa_one_four
-                            @test_date
+                    ~group
+                        @product_id .fnx_qa_two_four
+                        @lot_no .fnx_qa_one_four
+                        @test_date
                     ~hr
                     ~div @standard_tests .fnx_qa
                         ~table
@@ -27,34 +27,32 @@
                             ~tr
                                 ~th : 1/10
                                 ~td
-                                    @coliform_10 placeholder='Not Applicable' on_change='onchange_dilution("coliform_10", coliform_10)'
+                                    @coliform_10 placeholder='n/a' on_change='onchange_dilution("coliform_10", coliform_10)'
                                 ~td
-                                    @e_coli_10 placeholder='Not Applicable' on_change='onchange_dilution("e_coli_10", e_coli_10)'
+                                    @e_coli_10 placeholder='n/a' on_change='onchange_dilution("e_coli_10", e_coli_10)'
                                 ~td
-                                    @aerobic_plate_count_10 placeholder='Not Applicable' on_change='onchange_dilution("aerobic_plate_count_10", aerobic_plate_count_10)'
+                                    @aerobic_plate_count_10 placeholder='n/a' on_change='onchange_dilution("aerobic_plate_count_10", aerobic_plate_count_10)'
                                 ~td
-                                    @yeast_mold_10 placeholder='Not Applicable' on_change='onchange_dilution("yeast_mold_10", yeast_mold_10)'
+                                    @yeast_mold_10 placeholder='n/a' on_change='onchange_dilution("yeast_mold_10", yeast_mold_10)'
                             ~tr
                                 ~th : 1/100
                                 ~td
-                                    @coliform_100 placeholder='Not Applicable' on_change='onchange_dilution("coliform_100", coliform_100)'
+                                    @coliform_100 placeholder='n/a' on_change='onchange_dilution("coliform_100", coliform_100)'
                                 ~td
-                                    @e_coli_100 placeholder='Not Applicable' on_change='onchange_dilution("e_coli_100", e_coli_100)'
+                                    @e_coli_100 placeholder='n/a' on_change='onchange_dilution("e_coli_100", e_coli_100)'
                                 ~td
-                                    @aerobic_plate_count_100 placeholder='Not Applicable' on_change='onchange_dilution("aerobic_plate_count_100", aerobic_plate_count_100)'
+                                    @aerobic_plate_count_100 placeholder='n/a' on_change='onchange_dilution("aerobic_plate_count_100", aerobic_plate_count_100)'
                                 ~td
-                                    @yeast_mold_100 placeholder='Not Applicable' on_change='onchange_dilution("yeast_mold_100", yeast_mold_100)'
+                                    @yeast_mold_100 placeholder='n/a' on_change='onchange_dilution("yeast_mold_100", yeast_mold_100)'
                             ~tr
                                 ~th : 1/1000
                                 ~td
                                 ~td
                                 ~td
-                                    @aerobic_plate_count_1000 placeholder='Not Applicable' on_change='onchange_dilution("aerobic_plate_count_1000", aerobic_plate_count_1000)'
+                                    @aerobic_plate_count_1000 placeholder='n/a' on_change='onchange_dilution("aerobic_plate_count_1000", aerobic_plate_count_1000)'
                                 ~td
-                                    @yeast_mold_1000 placeholder='Not Applicable' on_change='onchange_dilution("yeast_mold_1000", yeast_mold_1000)'
-                    ~hr
-                    ~group
-                        @salmonella placeholder='Not Applicable' .fnx_qa
+                                    @yeast_mold_1000 placeholder='n/a' on_change='onchange_dilution("yeast_mold_1000", yeast_mold_1000)'
+                        ~hr
                     ~div @extra_tests
                     ~hr
                     ~separator string='Results / Remarks'

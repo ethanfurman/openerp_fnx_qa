@@ -217,19 +217,29 @@ class extra_test(osv.Model):
         dynamic_form = view.browse(cr, SUPERUSER_ID, [('name','=','fnx.quality_assurance.form.dynamic')], context=context)[0]
         extra_tests = self.read(
                 cr, SUPERUSER_ID,
-                fields=['name', 'field_name', 'field_type', 'dilution_10', 'dilution_100', 'dilution_1000', 'notes'],
+                fields=[
+                    'name', 'field_name', 'field_type',
+                    'dilution_10', 'dilution_100', 'dilution_1000',
+                    'notes',
+                    ],
                 context=context)
+        extra_tests.append({
+            'name': 'Salmonella',
+            'field_name': 'salmonella',
+            'field_type': 'pass_fail',
+            'dilution_10': False,
+            'dilution_100': False,
+            'dilution_1000': False,
+            'notes': False,
+            })
         # sort the tests between count, dilution, and pass-fail
-        count_tests = []
+        other_tests = []
         dilution_tests = []
-        pass_fail_tests = []
-        for test in sorted(extra_tests, key=lambda t: t['field_name']):
-            if test['field_type'] == 'pass_fail':
-                pass_fail_tests.append(test)
-            elif test['field_type'] == 'count':
-                count_tests.append(test)
-            else:
+        for test in sorted(extra_tests, key=lambda t: t['name']):
+            if test['field_type'] == 'dilution':
                 dilution_tests.append(test)
+            else:
+                other_tests.append(test)
         # combine records of same name but different dilution levels
         dilution_level = defaultdict(lambda: {'tenth':(False, None), 'hundreth':(False, None), 'thousandth':(False, None)})
         for test in dilution_tests:
@@ -239,7 +249,7 @@ class extra_test(osv.Model):
                 if test[dilution_field]:
                     dilution_level[test['name']][possible_dilution] = (True, test['field_name']+postfix)
         doc = Xaml(dynamic_tests, grouped=grouped).document.pages[0]
-        arch = doc.string(pass_fail_tests=pass_fail_tests, dilution_level=dilution_level, count_tests=count_tests)
+        arch = doc.string(other_tests=other_tests, dilution_level=dilution_level)
         view.write(cr, SUPERUSER_ID, [dynamic_form.id], {'arch':arch}, context=context)
 
     def create(self, cr, uid, values, context=None):
@@ -290,9 +300,6 @@ class extra_test(osv.Model):
         if values and values.keys() != ['notes']:
             raise ERPError('Error', 'Only "notes" can be changed at this point.')
         result = super(extra_test, self).write(cr, uid, ids, values, context=context)
-        # uncomment next two lines if we ever allow changes to 'name' or 'field_type'
-        # if result:
-        #     self._generate_form(cr, context=context)
         return result
 
     def unlink(self, cr, uid, ids, context=None):
@@ -328,18 +335,6 @@ class extra_test(osv.Model):
 dynamic_tests = '''\
 !!! xml1.0
 ~data
-    -if args.pass_fail_tests:
-        ~div @extra_tests position='inside'
-            ~group
-                -for test in args.pass_fail_tests:
-                    ~field name=`test['field_name']` placeholder="Not Applicable" .fnx_qa_one_four
-    -if args.count_tests:
-        ~div @extra_tests position='inside'
-            ~group
-                -for test in args.count_tests:
-                    -field_name = test['field_name']
-                    ~field name=field_name placeholder="Not Applicable" .fnx_qa_one_four
-    ~hr
     -if args.dilution_level:
         ~div @extra_tests position='inside'
             ~div .fnx_qa
@@ -364,6 +359,29 @@ dynamic_tests = '''\
                                             -else:
                                                 ~separator
                     ~hr
+    -if args.other_tests:
+        ~div @extra_tests position='inside'
+            -mid = (len(args.other_tests) + 1) // 2
+            -count = index = 0
+            ~group attrs="{'invisible': [('lot_no','=',False)]}"
+                ~group
+                    -for test in args.other_tests:
+                        -index += 1
+                        -field_name = test['field_name']
+                        -op = '='
+                        -count += 1
+                        -string = xmlify(test['name'])
+                        -attrs = xmlify("{'invisible': [('lot_no','%s',False),('%s','=',False)]}" % (op, field_name))
+                        ~field name=field_name string=string attrs=attrs placeholder="n/a"
+                        -if count == mid:
+                        -   break
+                ~group
+                    -for test in args.other_tests[index:]:
+                        -field_name = test['field_name']
+                        -op = '='
+                        -string = xmlify(test['name'])
+                        -attrs = xmlify("{'invisible': [('lot_no','%s',False),('%s','=',False)]}" % (op, field_name))
+                        ~field name=field_name string=string attrs=attrs placeholder="n/a"
 '''
 
 _fix_field_name = translator(to='_', keep=string.lowercase+'-0123456789', compress=True)
