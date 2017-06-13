@@ -367,5 +367,5 @@ dynamic_tests = '''\
 
 _fix_field_name = translator(to='_', keep=string.lowercase+'-0123456789', compress=True)
 def fix_field_name(name):
-    name = name.replace('<', '_lt_')
+    name = name.replace('<=', '_le_').replace('>=', '_ge_').replace('<', '_lt_').replace('&', '_and_').replace('>', '_gt').replace('=', '_eq_').replace('!=', '_ne_')
     return _fix_field_name(name.lower())
