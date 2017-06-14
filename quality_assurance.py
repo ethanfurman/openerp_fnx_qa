@@ -39,8 +39,6 @@ class quality_assurance(osv.Model):
             try:
                 qa_cr.execute('SELECT name,field_name,field_type,dilution_10,dilution_100,dilution_1000,notes FROM fnx_quality_assurance_extra_test')
             except ProgrammingError:
-                # if 'does not exist' in str(e):
-                #     return
                 raise
             else:
                 db_fields = qa_cr.dictfetchall()
@@ -73,11 +71,11 @@ class quality_assurance(osv.Model):
                 field = fields.char
                 kwds = dict(size=12, string=name)
                 pg_type = 'VARCHAR(12)'
-            # check that field doens't already exist
+            # check that field doesn't already exist
             if field_name in self._columns:
                 if mode == 'init':
                     continue
-                raise ERPError('Duplicate Field', 'Field "%s" (%s) already exists' % (name, field_name))
+                raise ERPError('Duplicate Field', 'Field %r (%r) already exists' % (name, field_name))
             col = field(*args, help=note, **kwds)
             self._columns[field_name] = col
             self._all_columns[field_name] = fields.column_info(field_name, col)
@@ -100,11 +98,10 @@ class quality_assurance(osv.Model):
                 id, model_id, self._name, field_name, name, col._type, '', False, 'base', 0, '', False, None,
             ))
             name1 = 'field_' + self._table + '_' + field_name
-            # cr.execute("select name from ir_model_data where name=%s", (name1,))
-            # if cr.fetchone():
-            #     name1 = name1 + "_" + str(id)
-            cr.execute("INSERT INTO ir_model_data (name,date_init,date_update,module,model,res_id) VALUES (%s, (now() at time zone 'UTC'), (now() at time zone 'UTC'), %s, %s, %s)", \
-                (name1, 'fnx_qa', 'ir.model.fields', id))
+            cr.execute(
+                    "INSERT INTO ir_model_data (name, date_init, date_update, module, model, res_id) "
+                        "VALUES (%s, (now() at time zone 'UTC'), (now() at time zone 'UTC'), %s, %s, %s)",
+                    (name1, 'fnx_qa', 'ir.model.fields', id))
 
     def _get_name(self, cr, uid, ids, field_name, args, context=None):
         values = {}
@@ -130,7 +127,7 @@ class quality_assurance(osv.Model):
                     '''DELETE FROM ir_model_data WHERE module='fnx_qa' and model='ir.model.fields' AND name=%s AND res_id=%s''',
                     (name1, res_id),
                     )
-            cr.execute('ALTER TABLE "%s" DROP COLUMN "%s"' % (self._table, field_name))
+            cr.execute('ALTER TABLE %s DROP COLUMN %s' % (self._table, field_name))
 
     _columns = {
         'name': fields.function(_get_name, arg=(), string='name', type='char', method=True, selectable=1,
@@ -267,11 +264,11 @@ class extra_test(osv.Model):
                 new_fields.append((name + '_100', field_type, hundreth))
                 new_fields.append((name + '_1000', field_type, thousandth))
         elif tenth or hundreth or thousandth:
-            raise ERPError('invalid dilution level', '1/10, 1/100, and/or 1/1000 cannot be selected for fields of type %r' % field_type)
+            raise ERPError('invalid dilution level', '1/10, 1/100, and/or 1/1000 cannot be selected for fields of type %r' % (field_type,))
         elif field_type in ('pass_fail', 'count'):
             new_fields = [(name, field_type, True)]
         else:
-            raise ERPError('logic failure', 'unknown test type: "%s"' % field_type)
+            raise ERPError('logic failure', 'unknown test type: %r' % (field_type,))
         values['field_name'] = name
         new_id = super(extra_test, self).create(cr, uid, values, context=context)
         # add new type to quality_assurance
@@ -308,10 +305,10 @@ class extra_test(osv.Model):
                 for postfix in ('_10', '_100', '_1000'):
                     names_to_remove.append(record.field_name + postfix)
             else:
-                raise ERPError('Logic Error', 'unknown field type: "%s"' % record.field_type)
+                raise ERPError('Logic Error', 'unknown field type: %r' % (record.field_type,))
             for field_name in names_to_remove:
                 if qa.search(cr, uid, [(field_name, '!=', False)], count=True, context=context):
-                    raise ERPError('Field has data', 'Unable to remove field "%s" as some tests have data for that field' % record.name)
+                    raise ERPError('Field has data', 'Unable to remove field %r as some tests have data for that field' % (record.name,))
             extra_fields = []
             for field_name in names_to_remove:
                 extra_fields.append({
