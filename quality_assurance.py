@@ -303,6 +303,7 @@ class extra_test(osv.Model):
         else:
             raise ERPError('logic failure', 'unknown test type: %r' % (field_type,))
         values['field_name'] = name
+        values['visible'] = True
         new_id = super(extra_test, self).create(cr, uid, values, context=context)
         # add new type to quality_assurance
         extra_fields = []
