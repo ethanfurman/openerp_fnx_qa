@@ -49,15 +49,12 @@ class quality_assurance(osv.Model):
                     if fields_dict['field_type'] != 'dilution':
                         extra_fields.append(fields_dict)
                     else:
-                        if fields_dict['dilution_10']:
-                            extra_fields.append(fields_dict.copy())
-                            extra_fields[-1]['field_name'] += '_10'
-                        if fields_dict['dilution_100']:
-                            extra_fields.append(fields_dict.copy())
-                            extra_fields[-1]['field_name'] += '_100'
-                        if fields_dict['dilution_1000']:
-                            extra_fields.append(fields_dict.copy())
-                            extra_fields[-1]['field_name'] += '_1000'
+                        extra_fields.append(fields_dict.copy())
+                        extra_fields[-1]['field_name'] += '_10'
+                        extra_fields.append(fields_dict.copy())
+                        extra_fields[-1]['field_name'] += '_100'
+                        extra_fields.append(fields_dict.copy())
+                        extra_fields[-1]['field_name'] += '_1000'
             finally:
                 qa_cr.close()
         for extra_field in extra_fields:
@@ -202,11 +199,13 @@ class extra_test(osv.Model):
         'dilution_100': fields.boolean('1/100'),
         'dilution_1000': fields.boolean('1/1000'),
         'notes': fields.text(string='Notes about test'),
+        'visible': fields.boolean('Visible'),
         }
 
     def _post_init(self, pool, cr):
         'read extra_test table and add found records to this table'
         res = super(extra_test, self)._post_init(pool, cr)
+        cr.execute('UPDATE fnx_quality_assurance_extra_test SET visible=true WHERE visible is null;')
         cr.execute("SELECT name from ir_model where model='fnx.quality_assurance.extra_test'")
         if cr.fetchone() is not None:
             self._generate_form(cr)
@@ -220,7 +219,7 @@ class extra_test(osv.Model):
                 fields=[
                     'name', 'field_name', 'field_type',
                     'dilution_10', 'dilution_100', 'dilution_1000',
-                    'notes',
+                    'notes', 'visible',
                     ],
                 context=context)
         extra_tests.append({
@@ -231,6 +230,7 @@ class extra_test(osv.Model):
             'dilution_100': False,
             'dilution_1000': False,
             'notes': False,
+            'visible': True,
             })
         # sort the tests between count, dilution, and pass-fail
         other_tests = []
@@ -246,8 +246,7 @@ class extra_test(osv.Model):
             for possible_dilution, dilution_field, postfix in (
                     ('tenth', 'dilution_10', '_10'), ('hundreth', 'dilution_100', '_100'), ('thousandth', 'dilution_1000', '_1000')
                     ):
-                if test[dilution_field]:
-                    dilution_level[test['name']][possible_dilution] = (True, test['field_name']+postfix)
+                dilution_level[test['name']][possible_dilution] = (test[dilution_field], test['field_name']+postfix)
         doc = Xaml(dynamic_tests, grouped=grouped).document.pages[0]
         arch = doc.string(other_tests=other_tests, dilution_level=dilution_level)
         view.write(cr, SUPERUSER_ID, [dynamic_form.id], {'arch':arch}, context=context)
@@ -259,41 +258,36 @@ class extra_test(osv.Model):
         tenth = values.get('dilution_10')
         hundreth = values.get('dilution_100')
         thousandth = values.get('dilution_1000')
-        if field_type == 'dilution' and not (tenth or hundreth or thousandth):
-            raise ERPError('missing dilution level', '1/10, 1/100, and/or 1/1000 must be selected for the dilution levels')
-        if field_type != 'dilution' and (tenth or hundreth or thousandth):
+        if field_type == 'dilution':
+            if not (tenth or hundreth or thousandth):
+                raise ERPError('missing dilution level', '1/10, 1/100, and/or 1/1000 must be selected for the dilution levels')
+            else:
+                new_fields = []
+                new_fields.append((name + '_10', field_type, tenth))
+                new_fields.append((name + '_100', field_type, hundreth))
+                new_fields.append((name + '_1000', field_type, thousandth))
+        elif tenth or hundreth or thousandth:
             raise ERPError('invalid dilution level', '1/10, 1/100, and/or 1/1000 cannot be selected for fields of type %r' % field_type)
-        if field_type in ('pass_fail', 'count'):
-            new_fields = [(name, field_type)]
-        elif field_type == 'dilution':
-            new_fields = []
-            if tenth:
-                new_fields.append((name + '_10', field_type))
-            if hundreth:
-                new_fields.append((name + '_100', field_type))
-            if thousandth:
-                new_fields.append((name + '_1000', field_type))
+        elif field_type in ('pass_fail', 'count'):
+            new_fields = [(name, field_type, True)]
         else:
             raise ERPError('logic failure', 'unknown test type: "%s"' % field_type)
         values['field_name'] = name
         new_id = super(extra_test, self).create(cr, uid, values, context=context)
         # add new type to quality_assurance
         extra_fields = []
-        for field_name, field_type in new_fields:
+        for field_name, field_type, visible in new_fields:
             extra_fields.append({
                     'name': values['name'],
                     'field_name': field_name,
                     'field_type': field_type,
                     'notes': values.get('notes', ''),
+                    'visible': visible,
                     })
         qa = self.pool.get('fnx.quality_assurance')
         qa._add_extra_test(cr, extra_fields)
-        try:
-            # update the fnx.quality_assurance.device.form.dynamic view to include the new field
-            self._generate_form(cr, context=context)
-        except Exception, e:
-            qa._remove_extra_test(cr, extra_fields)
-            raise ERPError('Uh Oh!', str(e))
+        # update the fnx.quality_assurance.device.form.dynamic view to include the new field
+        self._generate_form(cr, context=context)
         return new_id
 
     def write(self, cr, uid, ids, values, context=None):
@@ -311,9 +305,8 @@ class extra_test(osv.Model):
             if record.field_type in ('pass_fail', 'count'):
                 names_to_remove.append(record.field_name)
             elif record.field_type == 'dilution':
-                for dilution_level, postfix in (('dilution_10', '_10'), ('dilution_100', '_100'), ('dilution_1000', '_1000')):
-                    if record[dilution_level]:
-                        names_to_remove.append(record.field_name + postfix)
+                for postfix in ('_10', '_100', '_1000'):
+                    names_to_remove.append(record.field_name + postfix)
             else:
                 raise ERPError('Logic Error', 'unknown field type: "%s"' % record.field_type)
             for field_name in names_to_remove:
@@ -336,52 +329,74 @@ dynamic_tests = '''\
 !!! xml1.0
 ~data
     -if args.dilution_level:
-        ~div @extra_tests position='inside'
-            ~div .fnx_qa
-                -for next_four in grouped(sorted(args.dilution_level.items()), 4):
-                    ~table
+        ~xpath expr="//div[@name='dilution_tests']/table" position='after'
+            -for next_four in grouped(sorted(args.dilution_level.items()), 4):
+                ~hr
+                ~table attrs="{'invisible': [('lot_no','=',False)]}"
+                    ~tr
+                        ~th : Dilution
+                        -for i, (name, tests) in enumerate(next_four):
+                            ~th : =name
+                        -for j in range(i+1, 4):
+                            ~th
+                    -for level,label in (('tenth', '1/10'), ('hundreth', '1/100'), ('thousandth', '1/1000')):
                         ~tr
-                            ~th : dilution
-                            -for i, (name, tests) in enumerate(next_four):
-                                ~th : =name
-                            -for j in range(i+1, 4):
-                                ~th
-                        -for level,label in (('tenth', '1/10'), ('hundreth', '1/100'), ('thousandth', '1/1000')):
-                            -if any(test[1][level][0] for test in next_four):
-                                ~tr
-                                    ~th : =label
-                                    -for test_name, tests in next_four:
-                                        ~td
-                                            -active, field_name = tests[level]
-                                            -if active:
-                                                -onchange = "onchange_dilution('%s', %s)" % (field_name, field_name)
-                                                ~field name=field_name placeholder='Not Applicable' on_change=onchange
-                                            -else:
-                                                ~separator
-                    ~hr
+                            ~th : =label
+                            -for test_name, tests in next_four:
+                                ~td
+                                    -active, field_name = tests[level]
+                                    -onchange = "onchange_dilution('%s', %s)" % (field_name, field_name)
+                                    -# active lot_no+id  id/data   invisible
+                                    -#   T         T       F          F   \
+                                    -#   F         T       F          T    \
+                                    -#   T         F       F          T    /
+                                    -#   F         F       F          T   /
+                                    -#             +       /
+                                    -#   T         T       T          F
+                                    -#   F         T       T          F
+                                    -#   T         T       F          F
+                                    -#   F         T       F          T
+                                    -if active:
+                                    -   field_op = '='
+                                    -   sep_op = '!='
+                                    -else:
+                                    -   field_op = '!='
+                                    -   sep_op = '='
+                                    -field_attrs = xmlify("{'invisible': [('lot_no','%s',False),('%s','=',False)]}" % (field_op, field_name))
+                                    ~field name=field_name on_change=onchange attrs=field_attrs placeholder='n/a'
+                                    -sep_attrs = xmlify("{'invisible': ['|',('lot_no','%s',False),('%s','!=',False)]}" % (sep_op, field_name))
+                                    ~separator attrs=sep_attrs
     -if args.other_tests:
         ~div @extra_tests position='inside'
-            -mid = (len(args.other_tests) + 1) // 2
+            -mid = (len([t for t in args.other_tests if t['visible']]) + 1) // 2
             -count = index = 0
             ~group attrs="{'invisible': [('lot_no','=',False)]}"
                 ~group
                     -for test in args.other_tests:
                         -index += 1
                         -field_name = test['field_name']
-                        -op = '='
-                        -count += 1
+                        -active = test['visible']
+                        -if active:
+                        -   op = '='
+                        -   count += 1
+                        -else:
+                        -   op = '!='
                         -string = xmlify(test['name'])
                         -attrs = xmlify("{'invisible': [('lot_no','%s',False),('%s','=',False)]}" % (op, field_name))
-                        ~field name=field_name string=string attrs=attrs placeholder="n/a"
+                        ~field name=field_name string=string attrs=attrs placeholder="n/a" .fnx_qa_one_four
                         -if count == mid:
                         -   break
                 ~group
                     -for test in args.other_tests[index:]:
                         -field_name = test['field_name']
-                        -op = '='
+                        -active = test['visible']
+                        -if active:
+                        -   op = '='
+                        -else:
+                        -   op = '!='
                         -string = xmlify(test['name'])
                         -attrs = xmlify("{'invisible': [('lot_no','%s',False),('%s','=',False)]}" % (op, field_name))
-                        ~field name=field_name string=string attrs=attrs placeholder="n/a"
+                        ~field name=field_name string=string attrs=attrs placeholder="n/a" .fnx_qa_one_four
 '''
 
 _fix_field_name = translator(to='_', keep=string.lowercase+'-0123456789', compress=True)

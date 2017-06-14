@@ -14,9 +14,9 @@
                     ~group
                         @product_id .fnx_qa_two_four
                         @lot_no .fnx_qa_one_four
-                        @test_date
+                        @test_date .fnx_qa_one_four
                     ~hr
-                    ~div @standard_tests .fnx_qa
+                    ~div @dilution_tests .fnx_qa
                         ~table
                             ~tr
                                 ~th : Dilution
@@ -59,7 +59,7 @@
                     ~div @results
                         @result
 
-    ~data noupdate='1'
+    ~data noupdate='0'
         
         ~record model='ir.ui.view' #fnx_quality_assurance_dynamic_form_view
             @name: fnx.quality_assurance.form.dynamic
