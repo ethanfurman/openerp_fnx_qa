@@ -5,6 +5,7 @@ from collections import defaultdict
 from VSS.utils import translator, grouped
 from openerp import SUPERUSER_ID
 from openerp.exceptions import ERPError
+from openerp.osv.orm import except_orm as ValidateError
 from osv import fields, osv
 from psycopg2 import ProgrammingError
 from xaml import Xaml
@@ -58,49 +59,81 @@ class quality_assurance(osv.Model):
         for extra_field in extra_fields:
             name = extra_field['name']
             field_name = extra_field['field_name']
-            type = extra_field['field_type']
-            note = extra_field['notes']
-            args = ()
-            kwds = {}
-            if type == 'pass_fail':
-                field = fields.selection
-                args = (POS_NEG_NA, )
-                kwds = dict(string=name)
-                pg_type = 'VARCHAR'
+            if mode == 'rename':
+                old_field_name = extra_field['old_field_name']
             else:
-                field = fields.char
-                kwds = dict(size=12, string=name)
-                pg_type = 'VARCHAR(12)'
-            # check that field doesn't already exist
+                type = extra_field['field_type']
+                note = extra_field['notes']
+                args = ()
+                kwds = {}
+                if type == 'pass_fail':
+                    field = fields.selection
+                    args = (POS_NEG_NA, )
+                    kwds = dict(string=name)
+                    pg_type = 'VARCHAR'
+                else:
+                    field = fields.char
+                    kwds = dict(size=12, string=name)
+                    pg_type = 'VARCHAR(12)'
+            # check that field doens't already exist
             if field_name in self._columns:
                 if mode == 'init':
                     continue
-                raise ERPError('Duplicate Field', 'Field %r (%r) already exists' % (name, field_name))
-            col = field(*args, help=note, **kwds)
-            self._columns[field_name] = col
-            self._all_columns[field_name] = fields.column_info(field_name, col)
-            if mode == 'init':
-                # columns updated, postgre tables already correct
-                continue
-            table = self._name.replace('.','_')
-            cr.execute('ALTER TABLE "%s" ADD COLUMN "%s" %s' % (table, field_name, pg_type))
+                raise ERPError('Duplicate Field', 'Field "%s" (%s) already exists' % (name, field_name))
+            if mode == 'rename':
+                self._columns[field_name] = self._columns[old_field_name]
+                self._all_columns[field_name] = self._all_columns[old_field_name]
+                self._columns[field_name].string = name
+                assert self._all_columns[field_name].column.string is name, '_column and _all_column.column are out of sync'
+                # self._all_columns[field_name].string = name
+                del self._columns[old_field_name]
+                del self._all_columns[old_field_name]
+                cr.execute(
+                        """ALTER TABLE fnx_quality_assurance """
+                        """RENAME %s TO %s""" % (old_field_name, field_name),
+                        )
+                cr.execute(
+                        """UPDATE ir_model_fields """
+                        """SET name=%s """
+                        """WHERE model='fnx.quality_assurance' AND name=%s"""
+                        ,
+                        (field_name, old_field_name),
+                        )
+                old_field_name = 'field_' + self._table + '_' + old_field_name
+                field_name = 'field_' + self._table + '_' + field_name
+                cr.execute(
+                        """UPDATE ir_model_data """
+                        """SET name=%s """
+                        """WHERE model='ir.model.fields' AND name=%s"""
+                        ,
+                        (field_name, old_field_name),
+                        )
+            else:
+                col = field(*args, help=note, **kwds)
+                self._columns[field_name] = col
+                self._all_columns[field_name] = fields.column_info(field_name, col)
+                if mode == 'init':
+                    # columns updated, postgre tables already correct
+                    continue
+                cr.execute('ALTER TABLE "%s" ADD COLUMN "%s" %s' % (self._table, field_name, pg_type))
 
-            cr.execute('select nextval(%s)', ('ir_model_fields_id_seq',))
-            id = cr.fetchone()[0]
-            cr.execute("SELECT id FROM ir_model WHERE model=%s", (self._name,))
-            model_id = cr.fetchone()[0]
-            cr.execute("""INSERT INTO ir_model_fields (
-                id, model_id, model, name, field_description, ttype,
-                relation, view_load, state, select_level, relation_field, translate, serialization_field_id
-            ) VALUES (
-                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
-            )""", (
-                id, model_id, self._name, field_name, name, col._type, '', False, 'base', 0, '', False, None,
-            ))
-            name1 = 'field_' + self._table + '_' + field_name
-            cr.execute(
-                    "INSERT INTO ir_model_data (name, date_init, date_update, module, model, res_id) "
-                        "VALUES (%s, (now() at time zone 'UTC'), (now() at time zone 'UTC'), %s, %s, %s)",
+                cr.execute('select nextval(%s)', ('ir_model_fields_id_seq',))
+                id = cr.fetchone()[0]
+                cr.execute("SELECT id FROM ir_model WHERE model=%s", (self._name,))
+                model_id = cr.fetchone()[0]
+                cr.execute("""INSERT INTO ir_model_fields (
+                    id, model_id, model, name, field_description, ttype,
+                    relation, view_load, state, select_level, relation_field, translate, serialization_field_id
+                ) VALUES (
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                )""", (
+                    id, model_id, self._name, field_name, name, col._type, '', False, 'base', 0, '', False, None,
+                ))
+                name1 = 'field_' + self._table + '_' + field_name
+                # cr.execute("select name from ir_model_data where name=%s", (name1,))
+                # if cr.fetchone():
+                #     name1 = name1 + "_" + str(id)
+                cr.execute("INSERT INTO ir_model_data (name,date_init,date_update,module,model,res_id) VALUES (%s, (now() at time zone 'UTC'), (now() at time zone 'UTC'), %s, %s, %s)", \
                     (name1, 'fnx_qa', 'ir.model.fields', id))
 
     def _get_name(self, cr, uid, ids, field_name, args, context=None):
@@ -288,9 +321,59 @@ class extra_test(osv.Model):
         return new_id
 
     def write(self, cr, uid, ids, values, context=None):
-        if values and values.keys() != ['notes']:
-            raise ERPError('Error', 'Only "notes" can be changed at this point.')
+        if isinstance(ids, (int, long)):
+            ids = [ids]
+        qa = self.pool.get('fnx.quality_assurance')
+        if values:
+            for forbidden in ('field_type', ):
+                if forbidden in values:
+                    raise ERPError('Error', 'Test type cannot be changed.')
+        extra_fields = []
+        if 'name' in values:
+            if len(ids) > 1:
+                raise ERPError('Error', 'Cannot change multiple records to the same name')
+            name = fix_field_name(values['name'])
+            values['field_name'] = name
+            # get previous values
+            previous_records = self.read(cr, uid, ids, context=context)
+            for record in previous_records:
+                old_name = record['field_name']
+                if record['field_type'] == 'dilution':
+                    extra_fields.extend([
+                        {
+                            'name': values['name'],
+                            'old_field_name': old_name+'_10',
+                            'field_name': name+'_10',
+                            },
+                        {
+                            'name': values['name'],
+                            'old_field_name': old_name+'_100',
+                            'field_name': name+'_100',
+                            },
+                        {
+                            'name': values['name'],
+                            'old_field_name': old_name+'_1000',
+                            'field_name': name+'_1000',
+                            },
+                        ])
+                else:
+                    extra_fields.append({
+                        'name': values['name'],
+                        'old_field_name': old_name,
+                        'field_name': name,
+                        })
+            # update auxillary models and postgres tables
+            qa._add_extra_test(cr, extra_fields, mode='rename')
+        # update current model
         result = super(extra_test, self).write(cr, uid, ids, values, context=context)
+        try:
+            self._generate_form(cr, context=context)
+        except ValidateError:
+            if extra_fields:
+                for f in extra_fields:
+                    f['field_name'], f['old_field_name'] = f['old_field_name'], f['field_name']
+                qa._add_extra_test(cr, extra_fields, mode='rename')
+            raise
         return result
 
     def unlink(self, cr, uid, ids, context=None):
