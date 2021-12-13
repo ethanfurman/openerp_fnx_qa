@@ -58,6 +58,10 @@
                     ~separator string='Results / Remarks'
                     ~div @results
                         @result
+                    ~hr
+                    ~separator string='Documents'
+                    ~div @docs
+                        @docs
 
     ~data noupdate='0'
         

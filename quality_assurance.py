@@ -9,6 +9,7 @@ from openerp.osv.orm import except_orm as ValidateError
 from osv import fields, osv
 from psycopg2 import ProgrammingError
 from xaml import Xaml
+from fnx_fs.fields import files
 
 POS_NEG_NA = (
     ('negative', 'Negative'),
@@ -18,10 +19,13 @@ POS_NEG_NA = (
 class quality_assurance(osv.Model):
     _name = 'fnx.quality_assurance'
     _description = 'qa test'
-    _inherit = []
+    _inherit = ['fnx_fs.fs']
     _inherits = {}
     _mirrors = {}
     _order = 'lot_no'
+
+    _fnxfs_path = 'fnx_qa'
+    _fnxfs_path_fields = ['name']
 
     def __init__(self, pool, cr):
         'read extra_test table and add found records to this table'
@@ -180,6 +184,7 @@ class quality_assurance(osv.Model):
         'yeast_mold_10': fields.char(size=12, string='Yeast and Mold 1/10'),
         'yeast_mold_100': fields.char(size=12, string='Yeast and Mold 1/100'),
         'yeast_mold_1000': fields.char(size=12, string='Yeast and Mold 1/1000'),
+        'docs': files('documents', string='Supporting documents'),
         }
 
     _defaults = {
