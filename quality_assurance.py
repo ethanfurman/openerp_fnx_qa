@@ -169,7 +169,8 @@ class quality_assurance(osv.Model):
     _columns = {
         'name': fields.function(_get_name, arg=(), string='name', type='char', method=True, selectable=1,
             store={'fnx.quality_assurance': (lambda s, c, u, ids, ctx: ids, ['product_id', 'lot_no'], 20), }),
-        'product_id': fields.many2one('product.product', string='Product', required=True),
+        'product_id': fields.many2one('product.product', string='Product ID', required=True),
+        'product_desc': fields.char('Product', size=128, help='value frozen for historical accuracy'),
         'lot_no': fields.char(string='Lot #', size=24, required=True),
         'test_date': fields.date('Test date/time', required=True),
         'result': fields.text('Final Result / Remark'),
