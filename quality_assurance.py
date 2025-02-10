@@ -2,7 +2,8 @@ import threading
 import string
 import openerp
 from collections import defaultdict
-from VSS.utils import translator, grouped
+from enhlib.itertools import grouped
+from enhlib.text import translator
 from openerp import SUPERUSER_ID
 from openerp.exceptions import ERPError
 from openerp.osv.orm import except_orm as ValidateError
